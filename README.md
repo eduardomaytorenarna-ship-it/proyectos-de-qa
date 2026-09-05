@@ -1,4 +1,4 @@
-# Proyectos de QA - Eduardo Maytorena
+# - Proyectos de QA - Eduardo Maytorena
 
 Casos de prueba, automatizacion, pruebas de API y reportes de bugs.
 
