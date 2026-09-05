@@ -1,0 +1,12 @@
+{
+  "name": "api-gestor-tareas",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "API REST de gestion de tareas con autenticacion JWT",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest --runInBand"
+  },
+  "license": "MIT"
+}
