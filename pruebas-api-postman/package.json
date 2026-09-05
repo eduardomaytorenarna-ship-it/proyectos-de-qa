@@ -1,0 +1,13 @@
+{
+  "name": "pruebas-api-postman",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Coleccion de Postman para la API del gestor de tareas, ejecutable con Newman",
+  "scripts": {
+    "test": "newman run coleccion.json -e entorno.local.json --reporters cli",
+    "test:reporte": "newman run coleccion.json -e entorno.local.json --reporters cli,htmlextra --reporter-htmlextra-export reporte/newman.html"
+  },
+  "devDependencies": {
+    "newman": "^6.2.1"
+  }
+}

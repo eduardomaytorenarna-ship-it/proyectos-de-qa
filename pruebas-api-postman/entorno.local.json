@@ -1,0 +1,12 @@
+{
+  "id": "entorno-local",
+  "name": "Local",
+  "values": [
+    { "key": "baseUrl", "value": "http://localhost:3000", "enabled": true },
+    { "key": "email", "value": "", "enabled": true },
+    { "key": "password", "value": "melon-verde-42", "enabled": true },
+    { "key": "token", "value": "", "enabled": true },
+    { "key": "taskId", "value": "", "enabled": true }
+  ],
+  "_postman_variable_scope": "environment"
+}
