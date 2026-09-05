@@ -1,0 +1,41 @@
+name: CI API Postman
+
+on:
+  push:
+    paths:
+      - 'pruebas-api-postman/**'
+      - '.github/workflows/ci-api-postman.yml'
+  pull_request:
+    paths:
+      - 'pruebas-api-postman/**'
+      - '.github/workflows/ci-api-postman.yml'
+
+jobs:
+  newman:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout de las pruebas
+        uses: actions/checkout@v4
+
+      - name: Checkout de la aplicacion
+        uses: actions/checkout@v4
+        with:
+          repository: eduardo-mr1/proyectos-de-programacion
+          path: app
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Levantar la API
+        working-directory: app/api-gestor-tareas
+        run: |
+          npm install
+          npm start &
+          npx wait-on http://localhost:3000/health --timeout 60000
+
+      - name: Correr la coleccion con Newman
+        working-directory: pruebas-api-postman
+        run: |
+          npm install
+          npm test
