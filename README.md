@@ -1,6 +1,6 @@
-# Portafolio QA - Eduardo Maytorena
+# Proyectos de QA - Eduardo Maytorena
 
-Portafolio de pruebas de software: planes de prueba, automatizacion, pruebas de API y reportes de bugs.
+Casos de prueba, automatizacion, pruebas de API y reportes de bugs.
 
 ## Proyectos
 
