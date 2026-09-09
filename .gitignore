@@ -9,3 +9,11 @@ allure-results/
 *.log
 proyectos-de-programacion/
 *.code-workspace
+
+# Repositorios independientes que viven dentro de esta carpeta de trabajo.
+# Sin esto, un `git add .` los tragaria como entradas rotas.
+gastos/
+vigia/
+*.tgz
+package-lock.json
+_basura/

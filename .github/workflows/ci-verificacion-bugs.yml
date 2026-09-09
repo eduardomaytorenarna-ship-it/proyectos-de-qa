@@ -1,0 +1,43 @@
+name: CI Verificacion de bugs
+
+on:
+  push:
+    paths:
+      - 'reporte-de-bugs/**'
+      - '.github/workflows/ci-verificacion-bugs.yml'
+  pull_request:
+    paths:
+      - 'reporte-de-bugs/**'
+      - '.github/workflows/ci-verificacion-bugs.yml'
+  # Semanal: detecta que un cambio en la aplicacion revive un defecto viejo,
+  # aunque nadie toque este repositorio.
+  schedule:
+    - cron: '0 12 * * 1'
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del reporte
+        uses: actions/checkout@v4
+
+      - name: Checkout de la aplicacion
+        uses: actions/checkout@v4
+        with:
+          repository: eduardo-mr1/proyectos-de-programacion
+          ref: main
+          path: app
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Levantar la API
+        working-directory: app/api-gestor-tareas
+        run: |
+          npm install
+          npm start &
+          npx wait-on http://localhost:3000/health --timeout 60000
+
+      - name: Verificar que los 8 hallazgos sigan corregidos
+        run: ./reporte-de-bugs/verificacion/verificar-correcciones.sh
