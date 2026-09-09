@@ -8,6 +8,7 @@
     "test:reporte": "newman run coleccion.json -e entorno.local.json --reporters cli,htmlextra --reporter-htmlextra-export reporte/newman.html"
   },
   "devDependencies": {
-    "newman": "^6.2.1"
+    "newman": "^6.2.1",
+    "newman-reporter-htmlextra": "^1.23.1"
   }
 }

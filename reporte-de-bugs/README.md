@@ -41,15 +41,37 @@ Criterio de severidad: **Alta** = perdida de acceso a datos propios o riesgo de
 seguridad explotable. **Media** = datos invalidos persistidos o degradacion
 visible. **Baja** = inconsistencia de contrato o friccion de uso.
 
-## Como reproducir
+## Verificacion de no-regresion
+
+Los scripts que reproducian los defectos se volvieron obsoletos en cuanto se
+corrigieron: seguian afirmando el comportamiento roto, asi que uno de ellos
+empezo a fallar y el otro imprimia contradicciones. Nadie lo noto porque ningun
+workflow los ejecutaba.
+
+En vez de borrarlos se **invirtieron**: ahora afirman el comportamiento
+correcto. Si algun defecto reaparece, la verificacion falla.
 
 ```bash
-# API de la aplicacion corriendo en :3000
+# Con la API de la aplicacion corriendo en :3000
 cd ../proyectos-de-programacion/api-gestor-tareas && npm install && npm start
 
-# En otra terminal, los hallazgos de la API:
-./reproduccion/api-bugs.sh
+# En otra terminal:
+./verificacion/verificar-correcciones.sh
 ```
+
+11 comprobaciones sobre los hallazgos de API. Sale con codigo 1 si alguna falla,
+asi que sirve tal cual en CI.
+
+Los dos hallazgos de interfaz (BUG-003 y BUG-008) se verifican desde
+[`automatizacion-e2e/tests/regresiones-ui.spec.js`](../automatizacion-e2e/tests/regresiones-ui.spec.js),
+porque ese es el proyecto que ya tiene Playwright configurado y cobertura de CI.
+Un spec suelto en esta carpeta no lo corria nadie, y fue exactamente asi como la
+version anterior quedo obsoleta sin que nadie lo notara.
+
+**El workflow [`ci-verificacion-bugs.yml`](../.github/workflows/ci-verificacion-bugs.yml)
+corre la verificacion en cada cambio y ademas una vez por semana**, para
+detectar que un cambio en la aplicacion revive un defecto viejo aunque nadie
+toque este repositorio.
 
 ---
 
