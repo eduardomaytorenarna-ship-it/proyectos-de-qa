@@ -14,6 +14,10 @@ proyectos-de-programacion/
 # Sin esto, un `git add .` los tragaria como entradas rotas.
 gastos/
 vigia/
+reservas/
+mini-crm-php-mysql/
+Claude outputs/
+sincronizar-repos.ps1
 *.tgz
 package-lock.json
 _basura/

@@ -1,95 +1,104 @@
 import { test, expect } from '@playwright/test';
-import { registrarse, agregarTarea, nuevoUsuario } from './helpers.js';
+import { AuthPage, TareasPage, nuevoUsuario } from './helpers.js';
 
-test.describe('Gestion de tareas', () => {
+test.describe('Gestion de tareas (POM)', () => {
+  let authPage;
+  let tareasPage;
+
   test.beforeEach(async ({ page }) => {
-    await registrarse(page);
+    authPage = new AuthPage(page);
+    tareasPage = new TareasPage(page);
+    const usuario = nuevoUsuario();
+    await authPage.registrar(usuario.email, usuario.password);
+    await tareasPage.esperarCarga();
   });
 
-  test('crea una tarea y aparece en la lista', async ({ page }) => {
-    await agregarTarea(page, 'Escribir el plan de pruebas');
-    await expect(page.getByText('Escribir el plan de pruebas')).toBeVisible();
-    await expect(page.getByText('1 pendiente')).toBeVisible();
+  test('crea una tarea y aparece en la lista', async () => {
+    await tareasPage.agregarTarea('Escribir el plan de pruebas');
+    await expect(tareasPage.obtenerTarea('Escribir el plan de pruebas')).toBeVisible();
+    await tareasPage.esperarContador('1 pendiente');
   });
 
-  test('el boton Agregar esta deshabilitado con el campo vacio', async ({ page }) => {
-    await expect(page.getByRole('button', { name: 'Agregar' })).toBeDisabled();
-    await page.getByLabel('Nueva tarea').fill('algo');
-    await expect(page.getByRole('button', { name: 'Agregar' })).toBeEnabled();
+  test('el boton Agregar esta deshabilitado con el campo vacio', async () => {
+    await expect(tareasPage.addButton).toBeDisabled();
+    await tareasPage.newTaskInput.fill('algo');
+    await expect(tareasPage.addButton).toBeEnabled();
   });
 
-  test('marca una tarea como completada y el contador baja', async ({ page }) => {
-    await agregarTarea(page, 'Tarea por completar');
-    await expect(page.getByText('1 pendiente')).toBeVisible();
+  test('marca una tarea como completada y el contador baja', async () => {
+    await tareasPage.agregarTarea('Tarea por completar');
+    await tareasPage.esperarContador('1 pendiente');
 
     // Se usa click() y no check(): la interfaz no es optimista, espera la
     // respuesta de la API antes de reflejar el cambio, y check() exige que
     // el estado cambie de inmediato.
-    await page.getByRole('checkbox').click();
+    await tareasPage.marcarTarea('Tarea por completar');
 
-    await expect(page.getByRole('checkbox')).toBeChecked();
-    await expect(page.getByText('0 pendientes')).toBeVisible();
-    await expect(page.locator('li.done')).toHaveCount(1);
+    await expect(tareasPage.obtenerCheckbox('Tarea por completar')).toBeChecked();
+    await tareasPage.esperarContador('0 pendientes');
+    await expect(tareasPage.completedItems).toHaveCount(1);
   });
 
-  test('desmarca una tarea completada', async ({ page }) => {
-    await agregarTarea(page, 'Ida y vuelta');
-    await page.getByRole('checkbox').click();
-    await expect(page.getByText('0 pendientes')).toBeVisible();
+  test('desmarca una tarea completada', async () => {
+    await tareasPage.agregarTarea('Ida y vuelta');
+    await tareasPage.marcarTarea('Ida y vuelta');
+    await tareasPage.esperarContador('0 pendientes');
 
-    await page.getByRole('checkbox').click();
-    await expect(page.getByRole('checkbox')).not.toBeChecked();
-    await expect(page.getByText('1 pendiente')).toBeVisible();
-    await expect(page.locator('li.done')).toHaveCount(0);
+    await tareasPage.marcarTarea('Ida y vuelta');
+    await expect(tareasPage.obtenerCheckbox('Ida y vuelta')).not.toBeChecked();
+    await tareasPage.esperarContador('1 pendiente');
+    await expect(tareasPage.completedItems).toHaveCount(0);
   });
 
-  test('elimina una tarea', async ({ page }) => {
-    await agregarTarea(page, 'Tarea desechable');
-    await page.getByRole('button', { name: 'Eliminar Tarea desechable' }).click();
+  test('elimina una tarea', async () => {
+    await tareasPage.agregarTarea('Tarea desechable');
+    await tareasPage.eliminarTarea('Tarea desechable');
 
-    await expect(page.getByText('Tarea desechable')).toHaveCount(0);
-    await expect(page.getByText('Todavia no tienes tareas. Agrega la primera arriba.')).toBeVisible();
+    await expect(tareasPage.obtenerTarea('Tarea desechable')).toHaveCount(0);
+    await tareasPage.esperarMensajeVacio();
   });
 
-  test('maneja varias tareas y cuenta solo las pendientes', async ({ page }) => {
-    await agregarTarea(page, 'Primera');
-    await agregarTarea(page, 'Segunda');
-    await agregarTarea(page, 'Tercera');
-    await expect(page.getByText('3 pendientes')).toBeVisible();
+  test('maneja varias tareas y cuenta solo las pendientes', async () => {
+    await tareasPage.agregarTarea('Primera');
+    await tareasPage.agregarTarea('Segunda');
+    await tareasPage.agregarTarea('Tercera');
+    await tareasPage.esperarContador('3 pendientes');
 
-    await page.getByRole('checkbox').first().click();
-    await expect(page.getByText('2 pendientes')).toBeVisible();
-    await expect(page.locator('li')).toHaveCount(3);
+    await tareasPage.marcarTarea('Primera');
+    await tareasPage.esperarContador('2 pendientes');
+    await expect(tareasPage.taskItems).toHaveCount(3);
   });
 
   test('las tareas persisten despues de recargar', async ({ page }) => {
-    await agregarTarea(page, 'Sobrevive al refresh');
+    await tareasPage.agregarTarea('Sobrevive al refresh');
     await page.reload();
-    await expect(page.getByText('Sobrevive al refresh')).toBeVisible();
+    await expect(tareasPage.obtenerTarea('Sobrevive al refresh')).toBeVisible();
   });
 
-  test('el campo se limpia despues de agregar', async ({ page }) => {
-    await agregarTarea(page, 'Limpia el campo');
-    await expect(page.getByLabel('Nueva tarea')).toHaveValue('');
+  test('el campo se limpia despues de agregar', async () => {
+    await tareasPage.agregarTarea('Limpia el campo');
+    await expect(tareasPage.newTaskInput).toHaveValue('');
   });
 });
 
-test.describe('Aislamiento entre usuarios', () => {
+test.describe('Aislamiento entre usuarios (POM)', () => {
   // Este es el caso de seguridad que mas importa: que un usuario no vea
   // las tareas de otro. Se valida contra la interfaz, extremo a extremo.
   test('un usuario no ve las tareas de otro', async ({ page }) => {
-    await registrarse(page);
-    await agregarTarea(page, 'Tarea privada del usuario A');
-    await page.getByRole('button', { name: 'Cerrar sesion' }).click();
+    const authPage = new AuthPage(page);
+    const tareasPage = new TareasPage(page);
 
-    await page.getByRole('button', { name: 'No tengo cuenta, quiero registrarme' }).click();
+    const usuarioA = nuevoUsuario();
+    await authPage.registrar(usuarioA.email, usuarioA.password);
+    await tareasPage.esperarCarga();
+    await tareasPage.agregarTarea('Tarea privada del usuario A');
+    await tareasPage.cerrarSesion();
+
     const usuarioB = nuevoUsuario();
-    await page.getByLabel('Email').fill(usuarioB.email);
-    await page.getByLabel('Contrasena').fill(usuarioB.password);
-    await page.getByRole('button', { name: 'Registrarme' }).click();
+    await authPage.registrar(usuarioB.email, usuarioB.password);
+    await tareasPage.esperarCarga();
 
-    await expect(page.getByRole('heading', { name: 'Mis tareas' })).toBeVisible();
-    await expect(page.getByText('Tarea privada del usuario A')).toHaveCount(0);
-    await expect(page.getByText('Todavia no tienes tareas. Agrega la primera arriba.')).toBeVisible();
+    await expect(tareasPage.obtenerTarea('Tarea privada del usuario A')).toHaveCount(0);
+    await tareasPage.esperarMensajeVacio();
   });
 });

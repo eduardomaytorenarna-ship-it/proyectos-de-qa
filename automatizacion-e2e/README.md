@@ -54,6 +54,29 @@ La prueba mas importante es la ultima: **un usuario no ve las tareas de otro**.
 La API ya lo verifica a nivel de integracion, pero esta lo confirma desde la
 interfaz, que es donde el usuario real lo experimenta.
 
+## Arquitectura: Page Object Model (POM)
+
+La suite implementa el patrón **Page Object Model (POM)** para desacoplar las interacciones con la interfaz de las aserciones de prueba:
+
+```
+automatizacion-e2e/
+├── pages/
+│   ├── AuthPage.js     # Encapsula selectores y acciones de Login / Registro
+│   ├── TareasPage.js   # Encapsula selectores y acciones de la lista de tareas
+│   └── index.js        # Punto de entrada unificado de los Page Objects
+├── tests/
+│   ├── autenticacion.spec.js   # Casos E2E de auth usando AuthPage y TareasPage
+│   ├── tareas.spec.js          # Casos E2E de gestión de tareas usando TareasPage
+│   ├── regresiones-ui.spec.js  # Pruebas de no-regresión de interfaz
+│   └── helpers.js              # Funciones auxiliares y generador de usuarios
+└── playwright.config.js
+```
+
+### Ventajas del patrón POM implementado:
+1. **Mantenibilidad:** Si un selector o etiqueta cambia en el frontend, solo se actualiza en el Page Object correspondiente sin tocar los specs.
+2. **Legibilidad orientada a intención:** Las pruebas describen el flujo de usuario en alto nivel (`await authPage.registrar(...)`, `await tareasPage.agregarTarea(...)`).
+3. **Selectores accesibles centralizados:** Todos los locators continúan priorizando roles y etiquetas accesibles (`getByRole`, `getByLabel`), garantizando que la suite falle si la accesibilidad se degrada.
+
 ## Decisiones de diseno
 
 - **Selectores por rol y etiqueta** (`getByRole`, `getByLabel`) en vez de CSS o
