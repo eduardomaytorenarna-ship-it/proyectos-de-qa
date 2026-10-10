@@ -1,57 +1,69 @@
 import { test, expect } from '@playwright/test';
-import { nuevoUsuario, registrarse } from './helpers.js';
+import { AuthPage, TareasPage, nuevoUsuario } from './helpers.js';
 
-test.describe('Autenticacion', () => {
-  test('un usuario nuevo puede registrarse y entra a su lista de tareas', async ({ page }) => {
-    await registrarse(page);
-    await expect(page.getByRole('heading', { name: 'Mis tareas' })).toBeVisible();
-    await expect(page.getByText('Todavia no tienes tareas. Agrega la primera arriba.')).toBeVisible();
+test.describe('Autenticacion (POM)', () => {
+  let authPage;
+  let tareasPage;
+
+  test.beforeEach(async ({ page }) => {
+    authPage = new AuthPage(page);
+    tareasPage = new TareasPage(page);
   });
 
-  test('un usuario registrado puede cerrar e iniciar sesion de nuevo', async ({ page }) => {
-    const usuario = await registrarse(page);
+  test('un usuario nuevo puede registrarse y entra a su lista de tareas', async () => {
+    const usuario = nuevoUsuario();
+    await authPage.registrar(usuario.email, usuario.password);
 
-    await page.getByRole('button', { name: 'Cerrar sesion' }).click();
-    await expect(page.getByRole('heading', { name: 'Iniciar sesion' })).toBeVisible();
-
-    await page.getByLabel('Email').fill(usuario.email);
-    await page.getByLabel('Contrasena').fill(usuario.password);
-    await page.getByRole('button', { name: 'Entrar' }).click();
-    await expect(page.getByRole('heading', { name: 'Mis tareas' })).toBeVisible();
+    await tareasPage.esperarCarga();
+    await tareasPage.esperarMensajeVacio();
   });
 
-  test('rechaza credenciales invalidas y muestra el error', async ({ page }) => {
-    const usuario = await registrarse(page);
-    await page.getByRole('button', { name: 'Cerrar sesion' }).click();
+  test('un usuario registrado puede cerrar e iniciar sesion de nuevo', async () => {
+    const usuario = nuevoUsuario();
+    await authPage.registrar(usuario.email, usuario.password);
+    await tareasPage.esperarCarga();
 
-    await page.getByLabel('Email').fill(usuario.email);
-    await page.getByLabel('Contrasena').fill('contrasena-incorrecta');
-    await page.getByRole('button', { name: 'Entrar' }).click();
+    await tareasPage.cerrarSesion();
+    await authPage.esperarPantallaLogin();
 
-    await expect(page.getByRole('alert')).toContainText('Credenciales invalidas');
-    await expect(page.getByRole('heading', { name: 'Iniciar sesion' })).toBeVisible();
+    await authPage.iniciarSesion(usuario.email, usuario.password);
+    await tareasPage.esperarCarga();
   });
 
-  test('rechaza un email ya registrado', async ({ page }) => {
-    const usuario = await registrarse(page);
-    await page.getByRole('button', { name: 'Cerrar sesion' }).click();
-    await page.getByRole('button', { name: 'No tengo cuenta, quiero registrarme' }).click();
+  test('rechaza credenciales invalidas y muestra el error', async () => {
+    const usuario = nuevoUsuario();
+    await authPage.registrar(usuario.email, usuario.password);
+    await tareasPage.esperarCarga();
 
-    await page.getByLabel('Email').fill(usuario.email);
-    await page.getByLabel('Contrasena').fill(usuario.password);
-    await page.getByRole('button', { name: 'Registrarme' }).click();
+    await tareasPage.cerrarSesion();
+    await authPage.iniciarSesion(usuario.email, 'contrasena-incorrecta');
 
-    await expect(page.getByRole('alert')).toContainText('El email ya esta registrado');
+    await authPage.esperarError('Credenciales invalidas');
+    await authPage.esperarPantallaLogin();
   });
 
-  test('la sesion sobrevive a recargar la pagina', async ({ page }) => {
-    await registrarse(page);
-    await page.reload();
-    await expect(page.getByRole('heading', { name: 'Mis tareas' })).toBeVisible();
+  test('rechaza un email ya registrado', async () => {
+    const usuario = nuevoUsuario();
+    await authPage.registrar(usuario.email, usuario.password);
+    await tareasPage.esperarCarga();
+
+    await tareasPage.cerrarSesion();
+    await authPage.registrar(usuario.email, usuario.password);
+
+    await authPage.esperarError('El email ya esta registrado');
   });
 
-  test('sin sesion, la app muestra la pantalla de login', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Iniciar sesion' })).toBeVisible();
+  test('la sesion sobrevive a recargar la pagina', async () => {
+    const usuario = nuevoUsuario();
+    await authPage.registrar(usuario.email, usuario.password);
+    await tareasPage.esperarCarga();
+
+    await authPage.page.reload();
+    await tareasPage.esperarCarga();
+  });
+
+  test('sin sesion, la app muestra la pantalla de login', async () => {
+    await authPage.goto();
+    await authPage.esperarPantallaLogin();
   });
 });
